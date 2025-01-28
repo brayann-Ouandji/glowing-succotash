@@ -1,0 +1,45 @@
+const int trigpin = 2;
+const int echopin = 3;
+const int ledbuzpin = 5;
+
+float distance;
+float duree;
+void setup() {
+pinMode(trigpin, OUTPUT);
+pinMode(echopin, INPUT);
+pinMode(ledbuzpin, OUTPUT);
+Serial.begin(9600);
+}
+
+void loop() {
+  //on va éteindre les pins pour éviter une fuite de courant et attendre 2 microsec
+digitalWrite(trigpin, 0);
+digitalWrite(ledbuzpin, 0);
+delayMicroseconds(2);
+// on envoi 1 signal a travers le trig during 10 microsec
+digitalWrite(trigpin, HIGH);
+delayMicroseconds(10);
+// recupere la duree sur la pin de l'écho 
+duree = pulseIn(echopin, HIGH);
+// trouver la distance qui y correspond en cm
+distance = duree * 0.034 / 2;
+// afficher
+Serial.print("Distance=  ");
+Serial.println(distance);
+// si la distance est plus petite que 10cm on allume puis éteint le led et le buzzer
+  if(distance <= 5 &&;
+   distance!=0)
+{
+  digitalWrite(ledbuzpin, HIGH);
+  delay(200);
+  digitalWrite(ledbuzpin, 0);
+  delay(0);
+
+}
+ // sinon tout reste éteint 
+ else 
+ 
+ {
+    digitalWrite(ledbuzpin, LOW);
+ }
+}
