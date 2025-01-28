@@ -1,0 +1,889 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+FILE* a;
+
+typedef struct{
+    int  adh_num;
+    char adh_nom[50];
+    char adh_adresse[50];
+    int  adh_nb_emprunts;
+    int  state;
+    int  emprunt;
+}adherent_t;
+
+typedef struct{
+    char nom[50];
+    char prenom[50];
+}identite;
+
+typedef struct{
+    int       liv_num;
+    char      liv_titre[50];
+    identite  liv_auteur;
+    int       liv_exemplaire;
+    int       state;
+    int       emprunt;
+}livre_t;
+
+typedef struct{
+    int jour;
+    int mois;
+    int annee;
+}date;
+
+typedef struct{
+    int  emp_num;
+    int  adh_num;
+    int  num_liv[100];
+    date emp_date;
+    date ret_dat;
+}emprunt_t;
+
+typedef struct{
+    int  user_num;
+    char user_nom[50];
+    char user_log[50];
+    char user_pw[50];
+    int  state;
+}utilisateur_t;
+
+adherent_t lecture_adhr()
+{
+    adherent_t adhr;
+    printf("entrer le numero de l'adherent");
+    scanf("%d",&adhr.adh_num);
+    printf("entrer le nom de l'adherent");
+    scanf("%s",&adhr.adh_nom);
+    printf("entrer l'adresse de l'adherent");
+    scanf("%s",&adhr.adh_adresse);
+    printf("entrer le num de l'emprunt");
+    scanf("%d",&adhr.adh_nb_emprunts);
+    adhr.state=1;
+    adhr.emprunt=0;
+    return(adhr);
+}
+
+identite lecture_identite()
+{
+    identite auteur;
+    printf("entrer le nom de l'auteur");
+    scanf("%s",&auteur.nom);
+    printf("entrer le prenom de l'auteur");
+    scanf("%s",&auteur.prenom);
+    return(auteur);
+}
+livre_t lecture_liv()
+{
+    livre_t liv;
+    printf("entrer le numero du livre");
+    scanf("%d",&liv.liv_num);
+    printf("entrer le titre du livre");
+    scanf("%s",&liv.liv_titre);
+    liv.liv_auteur=lecture_identite();
+    printf("entrer le nombre d'exemplaires du livre");
+    scanf("%d",&liv.liv_exemplaire);
+    liv.state=1;
+    liv.emprunt=0;
+    return(liv);
+}
+utilisateur_t lecture_user()
+{
+    utilisateur_t user;
+    printf("entrer le numero de l'utilisateur");
+    scanf("%d",&user.user_num);
+    printf("entrer le nom de l'utilisateur");
+    scanf("%s",&user.user_nom);
+    printf("entrer le login de l'utilisateur");
+    scanf("%s",&user.user_log);
+    printf("entrer le mot de passe de l'utilisateur");
+    scanf("%s",&user.user_pw);
+    user.state=1;
+    return(user);
+}
+
+void ajouter_un_adherent()
+{
+    adherent_t adhr;
+    adhr= lecture_adhr();
+    a=fopen("f_adhr","a");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        fwrite(&adhr,sizeof(adhr),1,a);
+        fclose(a);
+    }
+
+}
+void ajouter_un_livre()
+{
+    livre_t liv;
+    liv= lecture_liv();
+    a=fopen("f_liv","a");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        fwrite(&liv,sizeof(liv),1,a);
+        fclose(a);
+    }
+
+}
+void ajouter_un_utilisateur()
+{
+    utilisateur_t user;
+    user= lecture_user();
+    a=fopen("f_user","a");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        fwrite(&user,sizeof(user),1,a);
+        fclose(a);
+    }
+}
+void modifier_un_adherent(char nom[50])
+{
+    adherent_t adhr;
+    a=fopen("f_adhr","r+");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(a)&&fread(&adhr,sizeof(adhr),1,a))
+        {
+            if(strcmp(adhr.adh_nom,nom)==0&&adhr.state==1)
+            {
+                fseek(a,-sizeof(adhr),SEEK_CUR);
+                adhr=lecture_adhr();
+                fwrite(&adhr,sizeof(adhr),1,a);
+                fseek(a,sizeof(adhr),SEEK_CUR);
+            }
+        }
+        fclose(a);
+    }
+}
+void modifier_un_livre(char titre[50])
+{
+    livre_t liv;
+    a=fopen("f_liv","r+");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(a)&&fread(&liv,sizeof(liv),1,a))
+        {
+            if(strcmp(liv.liv_titre,titre)==0&&liv.state==1)
+            {
+                fseek(a,-sizeof(liv),SEEK_CUR);
+                liv=lecture_liv();
+                fwrite(&liv,sizeof(liv),1,a);
+                fseek(a,sizeof(liv),SEEK_CUR);
+            }
+        }
+        fclose(a);
+    }
+}
+void modifier_un_utilisateur(char nom[50])
+{
+    utilisateur_t user;
+    a=fopen("f_user","r+");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(a)&&fread(&user,sizeof(user),1,a))
+        {
+            if(strcmp(user.user_nom,nom)==0&&user.state==1)
+            {
+                fseek(a,-sizeof(user),SEEK_CUR);
+                user=lecture_user();
+                fwrite(&user,sizeof(user),1,a);
+                fseek(a,sizeof(user),SEEK_CUR);
+            }
+        }
+        fclose(a);
+    }
+}
+void supprimer_un_adherent(char nom[50])
+{
+    int i=0;
+    adherent_t adhr;
+    a=fopen("f_adhr","r+");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(a)&&fread(&adhr,sizeof(adhr),1,a))
+        {
+            if(strcmp(adhr.adh_nom,nom)==0&&adhr.state==1)
+            {
+                    fseek(a,-sizeof(adhr),SEEK_CUR);
+                    adhr.state=0;
+                    fwrite(&adhr,sizeof(adhr),1,a);
+                    fseek(a,sizeof(adhr),SEEK_CUR);
+                    i++;
+
+            }
+        }
+        fclose(a);
+        if(i==0)
+        {
+             printf("l'adherent %s n'est pas present\n",nom);
+             system("pause");
+        }
+
+    }
+}
+void supprimer_un_livre(char titre[50])
+{
+    int i=0;
+    livre_t liv;
+    a=fopen("f_liv","r+");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(a)&&fread(&liv,sizeof(liv),1,a))
+        {
+            if(strcmp(liv.liv_titre,titre)==0&&liv.state==1)
+            {
+                    fseek(a,-sizeof(liv),SEEK_CUR);
+                    liv.state=0;
+                    fwrite(&liv,sizeof(liv),1,a);
+                    fseek(a,sizeof(liv),SEEK_CUR);
+                    i++;
+
+            }
+        }
+        fclose(a);
+        if(i==0)
+        {
+             printf("le %s n'est pas present\n",titre);
+             system("pause");
+        }
+
+    }
+}
+void supprimer_un_utilisateur(char nom[50])
+{
+    int i=0;
+    utilisateur_t user;
+    a=fopen("f_user","r+");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(a)&&fread(&user,sizeof(user),1,a))
+        {
+            if(strcmp(user.user_nom,nom)==0&&user.state==1)
+            {
+                    fseek(a,-sizeof(user),SEEK_CUR);
+                    user.state=0;
+                    fwrite(&user,sizeof(user),1,a);
+                    fseek(a,sizeof(user),SEEK_CUR);
+                    i++;
+
+            }
+        }
+        fclose(a);
+        if(i==0)
+        {
+             printf("l'utilisateur %s n'est pas present\n",nom);
+             system("pause");
+        }
+
+    }
+}
+void adherent_ordre_alphabetique()
+{
+    adherent_t adhr;
+    char tab[50][50];
+    char nom[50];
+    int i=0;
+    a=fopen("f_adhr","r");
+    if(a==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(a)&&fread(&adhr,sizeof(adhr),1,a))
+        {
+            if(adhr.state==1)
+            {
+                strcpy(tab[i],adhr.adh_nom);
+                i++;
+            }
+
+        }
+        fclose(a);
+        if(i==0)
+        {
+            printf("le fichier est vide\n");
+        }
+        else
+        {
+            for(int j=0;j<i;j++)
+            {
+                for(int k=0;k<=j;k++)
+                {
+                     strcpy(nom,tab[k]);
+                     if(strcmp(tab[k],tab[j])>0)
+                     {
+                          strcpy(tab[k],tab[j]);
+                          strcpy(tab[j],nom);
+                     }
+                }
+            }
+            for(int j=0;j<i;j++)
+            {
+                printf("%d- %s\n",j+1,tab[j]);
+            }
+
+        }
+
+    }
+}
+void livre_ordre_alphabetique()
+{
+    livre_t liv;
+    char tab[50][50];
+    char titre[50];
+    int i=0;
+    FILE* l;
+    l=fopen("f_liv","r");
+    if(l==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(l)&&fread(&liv,sizeof(liv),1,l))
+        {
+            if(liv.state==1)
+            {
+                strcpy(tab[i],liv.liv_titre);
+                i++;
+            }
+
+        }
+        fclose(l);
+        if(i==0)
+        {
+            printf("le fichier est vide\n");
+        }
+        else
+        {
+            for(int j=0;j<i;j++)
+            {
+                for(int k=0;k<=j;k++)
+                {
+                     strcpy(titre,tab[k]);
+                     if(strcmp(tab[k],tab[j])>0)
+                     {
+                          strcpy(tab[k],tab[j]);
+                          strcpy(tab[j],titre);
+                     }
+                }
+            }
+            for(int j=0;j<i;j++)
+            {
+                printf("%d- %s\n",j+1,tab[j]);
+            }
+
+        }
+
+    }
+}
+void recherche_adherent(char nom[50])
+{
+    adherent_t adhr;
+    a=fopen("f_adhr","r");
+    int i=0;
+    while(!feof(a)&&fread(&adhr,sizeof(adhr),1,a))
+    {
+        if(strcmp(nom,adhr.adh_nom)==0&&adhr.state==1)
+        {
+            printf(" adresse: %s\n numero: %d\n numero d'emprunt: %d\n",adhr.adh_adresse,adhr.adh_num,adhr.adh_nb_emprunts);
+            i++;
+
+        }
+    }
+    if(i==0)
+        printf("le nom n'est pas present");
+    fclose(a);
+}
+void recherche_livre(char titre[50])
+{
+    livre_t liv;
+    a=fopen("f_liv","r");
+    int i=0;
+    while(!feof(a)&&fread(&liv,sizeof(liv),1,a))
+    {
+        if(strcmp(titre,liv.liv_titre)==0&&liv.state==1)
+        {
+            printf(" auteur: %s\n numero: %d\n exemplaires: %d\n",liv.liv_auteur,liv.liv_num,liv.liv_exemplaire);
+            i++;
+
+        }
+    }
+    if(i==0)
+        printf("ce titre n'est pas present");
+    fclose(a);
+}
+void rechercher_utilisateur(char nom[50])
+{
+    utilisateur_t user;
+    a=fopen("f_user","r");
+    int i=0;
+    while(!feof(a)&&fread(&user,sizeof(user),1,a))
+    {
+        if(strcmp(nom,user.user_nom)==0&&user.state==1)
+        {
+            printf(" numero: %d\n nom: %s\n login: %s\n mot de passe: %s ",user.user_num,user.user_nom,user.user_log,user.user_pw);
+            i++;
+
+        }
+    }
+    if(i==0)
+        printf("cet utilisateur n'est pas present");
+    fclose(a);
+}
+date lecture_date()
+{
+    date Date;
+    printf("entrer le jour");
+    scanf("%d",&Date.jour);
+    printf("entrer le mois");
+    scanf("%d",&Date.mois);
+    printf("entrer l'annee");
+    scanf("%d",&Date.annee);
+}
+void emprunt_livre()
+{
+    int i=0,j,k=0;
+    FILE* l;
+    FILE* a;
+    FILE* e;
+    emprunt_t emp;
+    adherent_t adhr;
+    livre_t liv;
+    printf("entrer le numero de l'emprunt");
+    scanf("%d",&emp.adh_num);
+    e=fopen("f_emprunt","a");
+    if(e==NULL)
+        printf("probleme d'ouverture");
+    else{
+
+               while(i==0)
+               {
+                    a=fopen("f_adhr","r+");
+                    if(a==NULL)
+                        printf("probleme d'ouverture");
+                    else
+                    {
+                        printf("entrer le numero de l'adherent");
+                        scanf("%d",&emp.adh_num);
+                        while(!feof(a)&&fread(&adhr,sizeof(adhr),1,a))
+                        {
+                            if((emp.adh_num==adhr.adh_num)&&adhr.state==1)
+                            {
+                                i++;
+                                fseek(a,-sizeof(adhr),SEEK_CUR);
+                                adhr.emprunt=1;
+                                fwrite(&adhr,sizeof(adhr),1,a);
+                                fseek(a,sizeof(adhr),SEEK_CUR);
+                            }
+
+                        }
+                        if(i==0)
+                        {
+                            printf("numero d'adherent inexistant");
+                            system("pause");
+                            system("cls");
+                        }
+                        fclose(a);
+                    }
+
+               }
+           printf("entrer le nombre de livre a emprunter");
+           scanf("%d",&j);
+           for(k=0;k<j;k++)
+           {
+              i=0;
+
+                    while(i==0)
+                    {
+                        l=fopen("f_liv","r+");
+                        if(l==NULL)
+                            printf("probleme d'ouverture");
+                        else
+                        {
+                            printf("entrer le numero du livre %d",k+1);
+                            scanf("%d",&emp.num_liv[k]);
+                            while(!feof(l)&&fread(&liv,sizeof(liv),1,l))
+                            {
+                                if((emp.num_liv[k]==liv.liv_num)&&liv.state==1)
+                                {
+                                    if(liv.liv_exemplaire!=0)
+                                    {
+                                        i++;
+                                        liv.emprunt=1;
+                                        liv.liv_exemplaire--;
+                                        fseek(l,-sizeof(liv),SEEK_CUR);
+                                        fwrite(&liv,sizeof(liv),1,l);
+                                        fseek(l,sizeof(liv),SEEK_CUR);
+                                    }
+
+                                }
+
+                            }
+                            if(i==0)
+                            {
+                                printf("numero de livre inexistant ou livre en rupture de stock");
+                                system("pause");
+                                system("cls");
+                            }
+                            fclose(l);
+                        }
+
+                    }
+
+
+            }
+            printf("entrer la date d'emprunt");
+            emp.emp_date=lecture_date();
+            printf("entrer la date d'emprunt");
+            emp.emp_date=lecture_date();
+            fwrite(&emp,sizeof(emp),1,e);
+            fclose(e);
+    }
+
+
+
+}
+void livre_emprunte()
+{
+   FILE* l;
+   livre_t liv;
+   l=fopen("f_liv","r");
+   if(l==NULL)
+    printf("probleme d'ouverture");
+   else
+   {
+       while(!feof(l)&&fread(&liv,sizeof(liv),1,l))
+       {
+           if(liv.emprunt==1)
+            printf("%s\n",liv.liv_titre);
+       }
+       fclose(l);
+   }
+
+}
+void rendre_livre(char titre[50])
+{
+    FILE* l;
+    livre_t liv;
+    l=fopen("f_liv","r+");
+    if(l==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(l)&&fread(&liv,sizeof(liv),1,l))
+        {
+            if(strcmp(titre,liv.liv_titre)==0)
+            {
+                liv.emprunt=0;
+                liv.liv_exemplaire++;
+            }
+        }
+        fclose(l);
+    }
+
+}
+void emprunteurs()
+{
+   FILE* e;
+   adherent_t adhr;
+   e=fopen("f_adhr","r");
+   if(e==NULL)
+    printf("probleme d'ouverture");
+   else
+   {
+       while(!feof(e)&&fread(&adhr,sizeof(adhr),1,e))
+       {
+           if(adhr.emprunt==1)
+            printf("%s\n",adhr.adh_nom);
+       }
+       fclose(e);
+   }
+
+}
+void afficher_liste_utilisateur()
+{
+    FILE* u;
+    utilisateur_t user;
+    u=fopen("f_user","r");
+    if(u==NULL)
+        printf("probleme d'ouverture");
+    else
+    {
+        while(!feof(u)&&fread(&user,sizeof(user),1,u))
+        {
+            if(user.state==1)
+                printf("%s",user.user_nom);
+        }
+        fclose(u);
+    }
+}
+int main()
+{
+    int c=0;
+     while(c<5)
+    {
+        printf("votre choix\n 1-Gestion des adherent \n 2-Gestion des livres \n 3-Gestion des emprunts \n 4-Gestion des utilisateurs \n 5-Quitter le programme");
+        scanf("\n%d",&c);
+        if(c>5)
+        {
+             while(c>5)
+             {
+                  system("cls");
+                  printf("votre choix\n 1-Gestion des adherent \n 2-Gestion des livres \n 3-Gestion des emprunts \n 4-Gestion des utilisateurs \n 5-Quitter le programme");
+                  scanf("%d",&c);
+             }
+
+        }
+
+        switch(c)
+        {
+
+        case 1:
+             system("cls");
+             int k=0;
+             char nom[50];
+             while(k<4)
+             {
+                 printf(" .Ajouter, modifier ou supprimer un adherent \n .Afficher la liste des adherents par ordre amphabetique \n .rechercher un adherent par son nom et affiche les informations correspondantes \n .retour au menu principal");
+                 printf("\n");
+                 scanf("%d",&k);
+                 switch(k)
+                 {
+                 case 1:
+                    system("cls");
+                    printf(" .Ajouter\n .modifier\n .supprimer");
+                    printf("\n");
+                    scanf("%d",&k);
+                    system("cls");
+                    switch(k)
+                    {
+                    case 1:
+                        system("cls");
+                        ajouter_un_adherent();
+                        system("cls");
+                    break;
+                    case 2:
+                        system("cls");
+                        printf("entrer le nom de l'adherent dont les informations sont a modifier");
+                        printf("\n");
+                        scanf("%s",&nom);
+                        modifier_un_adherent(nom);
+                        system("cls");
+                    break;
+                    case 3:
+                        system("cls");
+                        printf("entrer le nom de l'adherent que vous voulez supprimer");
+                        printf("\n");
+                        scanf("%s",&nom);
+                        supprimer_un_adherent(nom);
+                        system("cls");
+                    break;
+
+                    }
+                 break;
+
+                 case 2:
+                    system("cls");
+                    adherent_ordre_alphabetique();
+                    system("pause");
+                    system("cls");
+
+                 break;
+
+                 case 3:
+                    system("cls");
+                    printf("entrer le nom de l'adherent dont vous voulez connaitre les informations");
+                    printf("\n");
+                    scanf("%s",&nom);
+                    recherche_adherent(nom);
+                    printf("\n");
+                    system("pause");
+                    system("cls");
+                 break;
+
+
+                 }
+             }
+             system("cls");
+        break;
+
+        case 2:
+             system("cls");
+             int m=0;
+             char titre[50];
+             while(m<4)
+             {
+                 printf(" .Ajouter, modifier ou supprimer un livre \n .Afficher la liste des livres par ordre alphabetique \n .rechercher le titre d'un livre et afficher l'enregistrement correspondant \n .Retour au menu principal");
+                 printf("\n");
+                 scanf("%d",&m);
+                 switch(m)
+                 {
+                 case 1:
+                    system("cls");
+                    printf(" .Ajouter\n .modifier\n .supprimer");
+                    printf("\n");
+                    scanf("%d",&m);
+                    system("cls");
+                    switch(m)
+                    {
+                    case 1:
+                        system("cls");
+                        ajouter_un_livre();
+                        system("cls");
+                    break;
+                    case 2:
+                        system("cls");
+                        printf("entrer le titre du livre dont les informations sont a modifier");
+                        printf("\n");
+                        scanf("%s",&titre);
+                        modifier_un_livre(titre);
+                        system("cls");
+                    break;
+                    case 3:
+                        system("cls");
+                        printf("entrer le titre du livre que vous voulez supprimer");
+                        printf("\n");
+                        scanf("%s",&titre);
+                        supprimer_un_livre(titre);
+                        system("cls");
+                    break;
+
+                    }
+                 break;
+                 case 2:
+                    system("cls");
+                    livre_ordre_alphabetique();
+                    system("pause");
+                    system("cls");
+
+                 break;
+
+                 case 3:
+                    system("cls");
+                    printf("entrer le titre du livre dont vous voulez connaitre les informations");
+                    printf("\n");
+                    scanf("%s",&titre);
+                    recherche_livre(titre);
+                    printf("\n");
+                    system("pause");
+                    system("cls");
+                 break;
+
+
+                 }
+             }
+             system("cls");
+
+
+        break;
+
+        case 3:
+             system("cls");
+             int n=0;
+             while(n<5)
+             {
+                 printf(" .Emprunter un livre \n .Afficher la liste des livres empruntes \n .rendre un livre \n .Afficher la liste des emprunteurs de livres \n .Retour au menu principal");
+                 printf("\n");
+                 scanf("%d",&n);
+                 switch(n)
+                 {
+                 case 1:
+                     system("cls");
+                     emprunt_livre();
+                 break;
+                 case 2:
+                     system("cls");
+                     livre_emprunte();
+                 break;
+                 case 3:
+                     system("cls");
+                     printf("entrer le titre du livre a rendre");
+                     scanf("%s",&titre);
+                     rendre_livre(titre);
+                 break;
+                 case 4:
+                     system("cls");
+                     emprunteurs();
+                 }
+                 system("pause");
+                 system("cls");
+             }
+
+        break;
+
+        case 4:
+             k=0;
+             system("cls");
+             while(k<4)
+             {
+                 printf(" .Ajouter, modifier ou supprimer un utilisateur \n .Afficher la liste des utilisateurs \n .Rechercher un utilisateur \n .Retour au menu principal");
+                 printf("\n");
+                 scanf("%d",&k);
+                 system("cls");
+                 switch(k)
+                 {
+                 case 1:
+                    printf(" .Ajouter\n .modifier\n .supprimer");
+                    printf("\n");
+                    scanf("%d",&k);
+                    system("cls");
+                    switch(k)
+                    {
+                    case 1:
+                        ajouter_un_utilisateur();
+                        system("cls");
+                    break;
+                    case 2:
+                        printf("entrer le nom de l'utilisateur dont les informations sont a modifier");
+                        printf("\n");
+                        scanf("%s",&nom);
+                        modifier_un_utilisateur(nom);
+                        system("cls");
+                    break;
+                    case 3:
+                        printf("entrer le nom de l'utilisateur que vous voulez supprimer");
+                        printf("\n");
+                        scanf("%s",&nom);
+                        supprimer_un_utilisateur(nom);
+                        system("cls");
+                    break;
+                    }
+                 break;
+                 case 2:
+                     afficher_liste_utilisateur();
+                     system("pause");
+                     system("cls");
+                 break;
+                 case 3:
+                     printf("entrer le nom de l'utilisateur que vous recherchÃ©");
+                     scanf("%s",&nom);
+                     rechercher_utilisateur(nom);
+                     system("pause");
+                     system("cls");
+                 break;
+
+                 }
+             }
+        break;
+        }
+    }
+
+    return 0;
+}
